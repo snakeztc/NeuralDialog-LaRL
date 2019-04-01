@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+.idea/
+scripts/
+data/norm-multi-woz/
