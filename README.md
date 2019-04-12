@@ -2,7 +2,7 @@
 Codebase for [Rethinking Action Spaces for Reinforcement Learning in End-to-end Dialog Agents with Latent Variable Models](https://arxiv.org/abs/1902.08858), published as a long paper in NAACL 2019 with oral presentation.
 
 <p align="center">
-  <img width="700" src="lrRL-h.png">
+  <img width="700" src="laRL-h.png">
 </p>
 
 If you use any source codes or datasets included in this toolkit in your
