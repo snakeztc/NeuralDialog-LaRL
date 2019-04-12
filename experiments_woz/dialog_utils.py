@@ -1,9 +1,8 @@
 import numpy as np
-from latent_dialog.enc2dec.decoders import TEACH_FORCE, GEN, DecoderRNN
-from latent_dialog.utils import get_detokenize
+from latent_dialog.enc2dec.decoders import GEN, DecoderRNN
 from latent_dialog.main import get_sent
-
 from collections import defaultdict
+
 
 def task_generate(model, data, config, evaluator, num_batch, dest_f=None, verbose=True):
     def write(msg):
@@ -15,7 +14,6 @@ def task_generate(model, data, config, evaluator, num_batch, dest_f=None, verbos
             dest_f.write(msg + '\n')
 
     model.eval()
-    # de_tknize = get_detokenize()
     de_tknize = lambda x: ' '.join(x)
     data.epoch_init(config, shuffle=num_batch is not None, verbose=False, fix_batch=config.fix_batch)
     evaluator.initialize()

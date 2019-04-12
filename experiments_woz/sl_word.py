@@ -7,12 +7,10 @@ from latent_dialog.utils import Pack, prepare_dirs_loggers
 import latent_dialog.corpora as corpora
 from latent_dialog.data_loaders import BeliefDbDataLoaders
 from latent_dialog.evaluators import MultiWozEvaluator
-from latent_dialog.models_task import SysPerfectBD2Resp
+from latent_dialog.models_task import SysPerfectBD2Word
 from latent_dialog.main import train, validate, generate
 import latent_dialog.domain as domain
 from dialog_utils import task_generate
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 domain_name = 'object_division'
 domain_info = domain.get_domain(domain_name)
@@ -96,7 +94,7 @@ test_data = BeliefDbDataLoaders('Test', test_dial, config)
 
 evaluator = MultiWozEvaluator('Deal')
 
-model = SysPerfectBD2Resp(corpus, config)
+model = SysPerfectBD2Word(corpus, config)
 
 if config.use_gpu:
     model.cuda()

@@ -2,21 +2,19 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.distributions.normal import Normal
-from latent_dialog.BaseModel import BaseModel
+from latent_dialog.base_models import BaseModel
 from latent_dialog.corpora import SYS, EOS, PAD, BOS
 from latent_dialog.utils import INT, FLOAT, LONG, Pack, cast_type
-from latent_dialog.enc2dec.encoders import EncoderRNN, RnnUttEncoder, TaskMlpGoalEncoder, SelfAttn
-from latent_dialog.nn_lib import IdentityConnector
+from latent_dialog.enc2dec.encoders import RnnUttEncoder
 from latent_dialog.enc2dec.decoders import DecoderRNN, GEN, TEACH_FORCE
-from latent_dialog.criterions import NLLEntropy, BinaryNLLEntropy, CatKLLoss, Entropy, NormKLLoss
+from latent_dialog.criterions import NLLEntropy, CatKLLoss, Entropy, NormKLLoss
 from latent_dialog import nn_lib
 import numpy as np
 
 
-class SysPerfectBD2Resp(BaseModel):
+class SysPerfectBD2Word(BaseModel):
     def __init__(self, corpus, config):
-        super(SysPerfectBD2Resp, self).__init__(config)
+        super(SysPerfectBD2Word, self).__init__(config)
         self.vocab = corpus.vocab
         self.vocab_dict = corpus.vocab_dict
         self.vocab_size = len(self.vocab)

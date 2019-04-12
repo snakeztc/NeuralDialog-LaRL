@@ -8,9 +8,9 @@ import latent_dialog.corpora as corpora
 from latent_dialog.data_loaders import BeliefDbDataLoaders
 from latent_dialog.evaluators import MultiWozEvaluator
 from latent_dialog.models_task import SysPerfectBD2Gauss
-from latent_dialog.main import train, validate, generate
+from latent_dialog.main import train, validate
 import latent_dialog.domain as domain
-from dialog_utils import task_generate, dump_latent
+from dialog_utils import task_generate
 import pickle as pkl
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"

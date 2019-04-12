@@ -224,6 +224,7 @@ class DealCorpus(object):
     def id2outcome(self, id_list):
         return [self.outcome_vocab[i] for i in id_list]
 
+
 class NormMultiWozCorpus(object):
     logger = logging.getLogger()
 

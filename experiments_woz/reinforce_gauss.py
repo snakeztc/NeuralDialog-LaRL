@@ -7,13 +7,10 @@ import torch as th
 from latent_dialog.utils import Pack, set_seed
 from latent_dialog.corpora import NormMultiWozCorpus
 from latent_dialog.models_task import SysPerfectBD2Gauss
-from latent_dialog.agent_task import OfflineLatentRlAgent, LstmAgent #, LstmRolloutAgent TODO
+from latent_dialog.agent_task import OfflineLatentRlAgent
 from latent_dialog.main import OfflineTaskReinforce
 from dialog_utils import task_generate
 
-
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 def main():
     start_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
@@ -45,7 +42,6 @@ def main():
         record_freq = 200,
         sv_train_freq= 0,  # TODO pay attention to main.py, cuz it is also controlled there
         use_gpu = env == 'gpu',
-        naive_baozi = True,
         nepoch = 10,
         nepisode = 0,
         tune_pi_only=False,
@@ -74,19 +70,19 @@ def main():
     corpus = NormMultiWozCorpus(sv_config)
 
     # TARGET AGENT
-    elder_model = SysPerfectBD2Gauss(corpus, sv_config)
+    sys_model = SysPerfectBD2Gauss(corpus, sv_config)
     if sv_config.use_gpu:
-        elder_model.cuda()
-    elder_model.load_state_dict(th.load(rl_config.sv_model_path, map_location=lambda storage, location: storage))
-    elder_model.eval()
-    elder = OfflineLatentRlAgent(elder_model, corpus, rl_config, name='Elder', tune_pi_only=rl_config.tune_pi_only)
+        sys_model.cuda()
+    sys_model.load_state_dict(th.load(rl_config.sv_model_path, map_location=lambda storage, location: storage))
+    sys_model.eval()
+    sys = OfflineLatentRlAgent(sys_model, corpus, rl_config, name='Elder', tune_pi_only=rl_config.tune_pi_only)
 
     # start RL
-    reinforce = OfflineTaskReinforce(elder, corpus, sv_config, elder_model, rl_config, task_generate)
+    reinforce = OfflineTaskReinforce(sys, corpus, sv_config, sys_model, rl_config, task_generate)
     reinforce.run()
 
-    # save elder model
-    th.save(elder_model.state_dict(), rl_config.rl_model_path)
+    # save sys model
+    th.save(sys_model.state_dict(), rl_config.rl_model_path)
 
     end_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
     print('[END]', end_time, '='*30)

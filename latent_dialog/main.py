@@ -57,59 +57,14 @@ class LossManager(object):
         return np.mean(self.backward_losses)
 
 
-class Battle(object):
-    def __init__(self, dialog, ctx_gen, corpus, sv_config, elder_model, baozi_model, rl_config, dialog_eval, ctx_gen_eval):
-        self.dialog = dialog
-        self.ctx_gen = ctx_gen
-        self.corpus = corpus
-        self.sv_config = sv_config
-        self.elder_model = elder_model
-        self.baozi_model = baozi_model
-        self.rl_config = rl_config
-        self.dialog_eval = dialog_eval
-        self.ctx_gen_eval = ctx_gen_eval
-
-        # training data for supervised learning
-        train_dial, val_dial, test_dial = self.corpus.get_corpus()
-        self.train_data = DealDataLoaders('Train', train_dial, self.sv_config)
-        self.val_data = DealDataLoaders('Val', val_dial, self.sv_config)
-        self.test_data = DealDataLoaders('Test', test_dial, self.sv_config)
-
-        # training func for supervised learning
-        self.train_func = train_single_batch
-
-        # recording func
-        self.record_func = record
-        if self.rl_config.record_freq > 0:
-            self.ppl_exp_file = open(os.path.join(self.rl_config.record_path, 'ppl.tsv'), 'w')
-            self.rl_exp_file = open(os.path.join(self.rl_config.record_path, 'rl.tsv'), 'w')
-            self.learning_exp_file = open(os.path.join(self.rl_config.record_path, 'learning.tsv'), 'w')
-
-        # evaluation
-        self.validate_func = validate
-        self.evaluator = evaluators.BleuEvaluator('Deal')
-        self.generate_func = generate
-
-
-    def run(self):
-        n = 0
-        # BEFORE RUN, RECORD INITIAL PERFORMANCE
-        self.record_func(n, self.elder_model, self.test_data, self.sv_config, self.baozi_model, self.ppl_exp_file,
-                         self.dialog_eval, self.ctx_gen_eval, self.rl_exp_file)
-
-        for ctxs in self.ctx_gen.iter(self.rl_config.nepoch):
-            # roll out and learn
-            _, agree, rl_reward, rl_stats = self.dialog.run(ctxs, verbose=True)
-
-
 class Reinforce(object):
-    def __init__(self, dialog, ctx_gen, corpus, sv_config, elder_model, baozi_model, rl_config, dialog_eval, ctx_gen_eval):
+    def __init__(self, dialog, ctx_gen, corpus, sv_config, sys_model, usr_model, rl_config, dialog_eval, ctx_gen_eval):
         self.dialog = dialog
         self.ctx_gen = ctx_gen
         self.corpus = corpus
         self.sv_config = sv_config
-        self.elder_model = elder_model
-        self.baozi_model = baozi_model
+        self.sys_model = sys_model
+        self.usr_model = usr_model
         self.rl_config = rl_config
         self.dialog_eval = dialog_eval
         self.ctx_gen_eval = ctx_gen_eval
@@ -142,7 +97,7 @@ class Reinforce(object):
         best_rl_reward = 0
 
         # BEFORE RUN, RECORD INITIAL PERFORMANCE
-        self.record_func(n, self.elder_model, self.test_data, self.sv_config, self.baozi_model, self.ppl_exp_file,
+        self.record_func(n, self.sys_model, self.test_data, self.sv_config, self.usr_model, self.ppl_exp_file,
                          self.dialog_eval, self.ctx_gen_eval, self.rl_exp_file)
 
         for ctxs in self.ctx_gen.iter(self.rl_config.nepoch):
@@ -153,7 +108,7 @@ class Reinforce(object):
             # supervised learning
             if self.rl_config.sv_train_freq > 0 and n % self.rl_config.sv_train_freq == 0:
                 # print('-'*15, 'Supervised Learning', '-'*15)
-                self.train_func(self.elder_model, self.train_data, self.sv_config)
+                self.train_func(self.sys_model, self.train_data, self.sv_config)
                 # print('-'*40)
 
             # roll out and learn
@@ -163,21 +118,21 @@ class Reinforce(object):
             if self.rl_config.record_freq > 0 and n % self.rl_config.record_freq == 0:
                 # TEST ON TRAINING DATA
                 rl_stats = validate_rl(self.dialog_eval, self.ctx_gen, num_episode=400)
-                self.learning_exp_file.write('{}\t{}\t{}\t{}\n'.format(n, rl_stats['elder_rew'],
+                self.learning_exp_file.write('{}\t{}\t{}\t{}\n'.format(n, rl_stats['sys_rew'],
                                                                        rl_stats['avg_agree'],
-                                                                       rl_stats['elder_unique']))
+                                                                       rl_stats['sys_unique']))
                 self.learning_exp_file.flush()
-                aver_reward = rl_stats['elder_rew']
+                aver_reward = rl_stats['sys_rew']
 
                 # TEST ON HELD-HOLD DATA
                 print('-'*15, 'Recording start', '-'*15)
-                self.record_func(n, self.elder_model, self.test_data, self.sv_config, self.baozi_model, self.ppl_exp_file,
+                self.record_func(n, self.sys_model, self.test_data, self.sv_config, self.usr_model, self.ppl_exp_file,
                                  self.dialog_eval, self.ctx_gen_eval, self.rl_exp_file)
 
                 # SAVE MODEL BASED on REWARD
                 if aver_reward > best_rl_reward:
                     print('[INFO] Update on reward in Epsd {} ({} > {})'.format(n, aver_reward, best_rl_reward))
-                    th.save(self.elder_model.state_dict(), self.rl_config.reward_best_model_path)
+                    th.save(self.sys_model.state_dict(), self.rl_config.reward_best_model_path)
                     best_rl_reward = aver_reward
                 else:
                     print('[INFO] No update on reward in Epsd {} ({} < {})'.format(n, aver_reward, best_rl_reward))
@@ -191,26 +146,26 @@ class Reinforce(object):
 
         print("$$$ Load {}-model".format(self.rl_config.reward_best_model_path))
         self.sv_config.batch_size = 32
-        self.elder_model.load_state_dict(th.load(self.rl_config.reward_best_model_path))
+        self.sys_model.load_state_dict(th.load(self.rl_config.reward_best_model_path))
 
-        validate(self.elder_model, self.val_data, self.sv_config)
-        validate(self.elder_model, self.test_data, self.sv_config)
+        validate(self.sys_model, self.val_data, self.sv_config)
+        validate(self.sys_model, self.test_data, self.sv_config)
 
         with open(os.path.join(self.rl_config.record_path, 'valid_file.txt'), 'w') as f:
-            self.generate_func(self.elder_model, self.val_data, self.sv_config, self.evaluator, num_batch=None,
+            self.generate_func(self.sys_model, self.val_data, self.sv_config, self.evaluator, num_batch=None,
                                dest_f=f)
 
         with open(os.path.join(self.rl_config.record_path, 'test_file.txt'), 'w') as f:
-            self.generate_func(self.elder_model, self.test_data, self.sv_config, self.evaluator, num_batch=None,
+            self.generate_func(self.sys_model, self.test_data, self.sv_config, self.evaluator, num_batch=None,
                                dest_f=f)
 
 
 class OfflineTaskReinforce(object):
-    def __init__(self, agent, corpus, sv_config, elder_model, rl_config, generate_func):
+    def __init__(self, agent, corpus, sv_config, sys_model, rl_config, generate_func):
         self.agent = agent
         self.corpus = corpus
         self.sv_config = sv_config
-        self.elder_model = elder_model
+        self.sys_model = sys_model
         self.rl_config = rl_config
         # training func for supervised learning
         self.train_func = task_train_single_batch
@@ -241,8 +196,8 @@ class OfflineTaskReinforce(object):
         best_rewards = -1 * np.inf
 
         # BEFORE RUN, RECORD INITIAL PERFORMANCE
-        test_loss = self.validate_func(self.elder_model, self.test_data, self.sv_config, use_py=True)
-        t_success, t_match, t_bleu, t_f1 = self.generate_func(self.elder_model, self.test_data, self.sv_config,
+        test_loss = self.validate_func(self.sys_model, self.test_data, self.sv_config, use_py=True)
+        t_success, t_match, t_bleu, t_f1 = self.generate_func(self.sys_model, self.test_data, self.sv_config,
                                                               self.evaluator, None, verbose=False)
 
         self.ppl_test_file.write('{}\t{}\t{}\t{}\n'.format(n, np.exp(test_loss), t_bleu, t_f1))
@@ -251,7 +206,7 @@ class OfflineTaskReinforce(object):
         self.rl_test_file.write('{}\t{}\t{}\t{}\n'.format(n, (t_success + t_match), t_success, t_match))
         self.rl_test_file.flush()
 
-        self.elder_model.train()
+        self.sys_model.train()
         try:
             for epoch_id in range(self.rl_config.nepoch):
                 self.train_data.epoch_init(self.sv_config, shuffle=True, verbose=epoch_id == 0, fix_batch=True)
@@ -261,6 +216,7 @@ class OfflineTaskReinforce(object):
 
                     if batch is None:
                         break
+
                     n += 1
                     if n % 50 == 0:
                         print("Reinforcement Learning {}/{} eposide".format(n, self.train_data.num_batch*self.rl_config.nepoch))
@@ -278,7 +234,7 @@ class OfflineTaskReinforce(object):
 
                     # supervised learning
                     if self.rl_config.sv_train_freq > 0 and n % self.rl_config.sv_train_freq == 0:
-                        self.train_func(self.elder_model, self.sl_train_data, self.sv_config)
+                        self.train_func(self.sys_model, self.sl_train_data, self.sv_config)
 
                     # record model performance in terms of several evaluation metrics
                     if self.rl_config.record_freq > 0 and n % self.rl_config.record_freq == 0:
@@ -289,15 +245,15 @@ class OfflineTaskReinforce(object):
                          self.learning_exp_file.flush()
 
                          # PPL & reward on validation
-                         valid_loss = self.validate_func(self.elder_model, self.val_data, self.sv_config, use_py=True)
-                         v_success, v_match, v_bleu, v_f1 = self.generate_func(self.elder_model, self.val_data, self.sv_config, self.evaluator, None, verbose=False)
+                         valid_loss = self.validate_func(self.sys_model, self.val_data, self.sv_config, use_py=True)
+                         v_success, v_match, v_bleu, v_f1 = self.generate_func(self.sys_model, self.val_data, self.sv_config, self.evaluator, None, verbose=False)
                          self.ppl_val_file.write('{}\t{}\t{}\t{}\n'.format(n, np.exp(valid_loss), v_bleu, v_f1))
                          self.ppl_val_file.flush()
                          self.rl_val_file.write('{}\t{}\t{}\t{}\n'.format(n, (v_success + v_match), v_success, v_match))
                          self.rl_val_file.flush()
 
-                         test_loss = self.validate_func(self.elder_model, self.test_data, self.sv_config, use_py=True)
-                         t_success, t_match, t_bleu, t_f1 = self.generate_func(self.elder_model, self.test_data, self.sv_config, self.evaluator, None, verbose=False)
+                         test_loss = self.validate_func(self.sys_model, self.test_data, self.sv_config, use_py=True)
+                         t_success, t_match, t_bleu, t_f1 = self.generate_func(self.sys_model, self.test_data, self.sv_config, self.evaluator, None, verbose=False)
                          self.ppl_test_file.write('{}\t{}\t{}\t{}\n'.format(n, np.exp(test_loss), t_bleu, t_f1))
                          self.ppl_test_file.flush()
                          self.rl_test_file.write('{}\t{}\t{}\t{}\n'.format(n, (t_success + t_match), t_success, t_match))
@@ -306,118 +262,27 @@ class OfflineTaskReinforce(object):
                          # save model is needed
                          if v_success+v_match > best_rewards:
                              print("Model saved with success {} match {}".format(v_success, v_match))
-                             th.save(self.elder_model.state_dict(), self.rl_config.reward_best_model_path)
+                             th.save(self.sys_model.state_dict(), self.rl_config.reward_best_model_path)
                              best_rewards = v_success+v_match
 
 
-                         self.elder_model.train()
+                         self.sys_model.train()
                          print('-'*15, 'Recording end', '-'*15)
         except KeyboardInterrupt:
             print("RL training stopped from keyboard")
 
         print("$$$ Load {}-model".format(self.rl_config.reward_best_model_path))
         self.sv_config.batch_size = 32
-        self.elder_model.load_state_dict(th.load(self.rl_config.reward_best_model_path))
+        self.sys_model.load_state_dict(th.load(self.rl_config.reward_best_model_path))
 
-        validate(self.elder_model, self.val_data, self.sv_config, use_py=True)
-        validate(self.elder_model, self.test_data, self.sv_config, use_py=True)
+        validate(self.sys_model, self.val_data, self.sv_config, use_py=True)
+        validate(self.sys_model, self.test_data, self.sv_config, use_py=True)
 
         with open(os.path.join(self.rl_config.record_path, 'valid_file.txt'), 'w') as f:
-            self.generate_func(self.elder_model, self.val_data, self.sv_config, self.evaluator, num_batch=None, dest_f=f)
+            self.generate_func(self.sys_model, self.val_data, self.sv_config, self.evaluator, num_batch=None, dest_f=f)
 
         with open(os.path.join(self.rl_config.record_path, 'test_file.txt'), 'w') as f:
-            self.generate_func(self.elder_model, self.test_data, self.sv_config, self.evaluator, num_batch=None, dest_f=f)
-
-
-class TaskReinforce(object):
-    def __init__(self, dialog, goal_gen, corpus, sv_config, elder_model, rl_config, dailog_eval, goal_gen_eval, generate_func=None):
-        self.dialog = dialog
-        self.goal_gen = goal_gen
-        self.corpus = corpus
-        self.sv_config = sv_config
-        self.elder_model = elder_model
-        self.rl_config = rl_config
-        self.prepare_stuff()
-        self.generate_func = generate_func if generate_func is not None else generate
-        self.dialog_eval = dailog_eval
-        self.goal_gen_eval = goal_gen_eval
-
-    def prepare_stuff(self):
-        # training data for supervised learning
-        train_dial, val_dial, test_dial = self.corpus.get_corpus()
-        self.train_data = BeliefDbDataLoaders('Train', train_dial, self.sv_config)
-        self.val_data = BeliefDbDataLoaders('Val', val_dial, self.sv_config)
-        self.test_data = BeliefDbDataLoaders('Test', test_dial, self.sv_config)
-
-        # training func for supervised learning
-        self.train_func = task_train_single_batch
-        self.record_func = record_task
-        if self.rl_config.record_freq > 0:
-            self.ppl_exp_file = open(os.path.join(self.rl_config.record_path, 'ppl.log'), 'w')
-            self.rl_exp_file = open(os.path.join(self.rl_config.record_path, 'rl.log'), 'w')
-            # self.text_exp_file = open(os.path.join(self.rl_config.record_path, 'text.json'), 'w')
-            self.learning_exp_file = open(os.path.join(self.rl_config.record_path, 'learning.log'), 'w')
-        # evaluation
-        self.validate_func = validate
-        self.evaluator = evaluators.MultiWozEvaluator('SYS_WOZ')
-
-    def run(self):
-        n = 0
-        best_valid_loss = np.inf
-        train_rs = []
-
-        #self.record_func(0, self.elder_model, self.val_data, self.sv_config, self.ppl_exp_file,
-        #                 self.dialog_eval, self.goal_gen_eval, self.rl_exp_file)
-
-        for g_key, goal in self.goal_gen.iter(self.rl_config.nepoch):
-            n += 1
-            print('='*40)
-            print('='*15, 'Episode {} begin'.format(n), '='*15)
-            print('g_key = {}'.format(g_key))
-
-            # supervised learning
-            if self.rl_config.sv_train_freq > 0 and n % self.rl_config.sv_train_freq == 0:
-                print('-'*15, 'Supervised Learning', '-'*15)
-                self.train_func(self.elder_model, self.train_data, self.sv_config)
-                print('-'*40)
-
-            # reinforcement learning
-            print('-'*15, 'Reinforcement Learning', '-'*15)
-            _, reward = self.dialog.run(g_key, goal)
-            train_rs.append(reward)
-
-            if self.rl_config.record_freq > 0 and n % self.rl_config.record_freq == 0:
-                self.learning_exp_file.write('{}\t{}\n'.format(n, np.mean(train_rs[-self.rl_config.record_freq:])))
-                self.learning_exp_file.flush()
-
-            # record model performance in terms of several evaluation metrics
-            if self.rl_config.record_freq > 0 and n % self.rl_config.record_freq == 0:
-                 print('-'*15, 'Recording start', '-'*15)
-                 self.record_func(n, self.elder_model, self.val_data, self.sv_config, self.ppl_exp_file,
-                                  self.dialog_eval, self.goal_gen_eval, self.rl_exp_file)
-                 print('-'*15, 'Recording end', '-'*15)
-
-            # evaluation
-            if self.rl_config.eval_freq > 0 and n % self.rl_config.eval_freq == 0:
-                print('-'*15, 'Evaluation', '-'*15)
-                valid_loss = self.validate_func(self.elder_model, self.val_data, self.sv_config)
-                if valid_loss < best_valid_loss:
-                    print('[INFO] Update on PPL in Epsd {} ({} < {}), AND model saved'.format(n, np.exp(valid_loss), np.exp(best_valid_loss)))
-                    th.save(self.elder_model.state_dict(), self.rl_config.ppl_best_model_path)
-                    best_valid_loss = valid_loss
-                else:
-                    print('[INFO] No update on PPL in Epsd {} ({} > {})'.format(n, np.exp(valid_loss), np.exp(best_valid_loss)))
-                # self.validate_func(self.elder_model, self.test_data, self.sv_config)
-                self.generate_func(self.elder_model, self.val_data, self.sv_config, self.evaluator, None, verbose=False)
-                print('-'*40)
-                self.elder_model.train()
-
-            print('='*15, 'Episode {} end'.format(n), '='*15)
-            print('='*40)
-            # stop check
-            if self.rl_config.nepisode > 0 and n > self.rl_config.nepisode:
-                print('-'*15, 'Stop from config', '-'*15)
-                break
+            self.generate_func(self.sys_model, self.test_data, self.sv_config, self.evaluator, num_batch=None, dest_f=f)
 
 
 def validate_rl(dialog_eval, ctx_gen, num_episode=200):
@@ -436,10 +301,10 @@ def validate_rl(dialog_eval, ctx_gen, num_episode=200):
             if turn[0] == 'Elder':
                 sent_metric.record(turn[1])
                 word_metric.record(turn[1])
-    results = {'elder_rew': np.average(reward_list),
+    results = {'sys_rew': np.average(reward_list),
                'avg_agree': np.average(agree_list),
-               'elder_sent_unique': sent_metric.value(),
-               'elder_unique': word_metric.value()}
+               'sys_sent_unique': sent_metric.value(),
+               'sys_unique': word_metric.value()}
     return results
 
 

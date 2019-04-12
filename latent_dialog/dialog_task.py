@@ -1,12 +1,6 @@
-from pprint import pprint
-import numpy as np
-from collections import defaultdict
-from latent_dialog import domain
 from latent_dialog.metric import MetricsContainer
-# from latent_dialog.utils import read_lines
 from latent_dialog.corpora import EOD, EOS
 from latent_dialog import evaluators
-
 
 
 class Dialog(object):

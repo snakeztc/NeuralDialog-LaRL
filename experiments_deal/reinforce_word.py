@@ -7,9 +7,9 @@ import torch as th
 from latent_dialog.utils import Pack, set_seed
 from latent_dialog.corpora import DealCorpus
 from latent_dialog.models_deal import HRED
-from latent_dialog.main import train_single_batch, validate, generate, Reinforce
-from latent_dialog.agent import RlAgent, LstmAgent #, LstmRolloutAgent TODO
-from latent_dialog.dialog import Dialog, DialogEval
+from latent_dialog.main import Reinforce
+from latent_dialog.agent_deal import RlAgent, LstmAgent
+from latent_dialog.dialog_deal import Dialog, DialogEval
 from latent_dialog.domain import ContextGenerator, ContextGeneratorEval
 
 from FB.models.dialog_model import DialogModel as FbDialogModel
@@ -17,8 +17,6 @@ from FB.data import WordCorpus as FbWordCorpus
 from FB.utils import use_cuda as FB_use_cuda
 from latent_dialog.judgment import Judger
 
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 def main():
 
@@ -53,7 +51,6 @@ def main():
         record_path = exp_dir,
         record_freq = 100,
         use_gpu = env == 'gpu', 
-        naive_baozi = True, 
         nepoch = 4,
         nepisode = 0, 
         sv_train_freq = 4,
@@ -88,23 +85,23 @@ def main():
 
     # load models for two agents
     # TARGET AGENT
-    elder_model = HRED(corpus, sv_config)
+    sys_model = HRED(corpus, sv_config)
     if sv_config.use_gpu: # TODO gpu -> cpu transfer
-        elder_model.cuda()
-    elder_model.load_state_dict(th.load(rl_config.sv_model_path, map_location=lambda storage, location: storage))
+        sys_model.cuda()
+    sys_model.load_state_dict(th.load(rl_config.sv_model_path, map_location=lambda storage, location: storage))
     # we don't want to use Dropout during RL
-    elder_model.eval()
-    elder = RlAgent(elder_model, corpus, rl_config, name='Elder')
+    sys_model.eval()
+    sys = RlAgent(sys_model, corpus, rl_config, name='Elder')
 
-    # SIMULATOR we keep baozi frozen, i.e. we don't update its parameters
-    baozi_model = HRED(corpus, sim_config)
+    # SIMULATOR we keep usr frozen, i.e. we don't update its parameters
+    usr_model = HRED(corpus, sim_config)
     if sim_config.use_gpu: # TODO gpu -> cpu transfer
-        baozi_model.cuda()
+        usr_model.cuda()
 
-    baozi_model.load_state_dict(th.load(rl_config.sim_model_path, map_location=lambda storage, location: storage))
-    baozi_model.eval()
-    baozi_type = LstmAgent if rl_config.naive_baozi else LstmRolloutAgent
-    baozi = baozi_type(baozi_model, corpus, rl_config, name='Baozi')
+    usr_model.load_state_dict(th.load(rl_config.sim_model_path, map_location=lambda storage, location: storage))
+    usr_model.eval()
+    usr_type = LstmAgent
+    usr = usr_type(usr_model, corpus, rl_config, name='Baozi')
 
     # load FB judger model
     judger_config = Pack(json.load(open(rl_config.judger_config_path)))
@@ -122,19 +119,19 @@ def main():
     judger = Judger(judger_model, judger_device_id)
 
     # initialize communication dialogue between two agents
-    dialog = Dialog([elder, baozi], judger, rl_config)
+    dialog = Dialog([sys, usr], judger, rl_config)
     ctx_gen = ContextGenerator(rl_config.selfplay_path)
 
     # simulation module
-    dialog_eval = DialogEval([elder, baozi], judger, rl_config)
+    dialog_eval = DialogEval([sys, usr], judger, rl_config)
     ctx_gen_eval = ContextGeneratorEval(rl_config.selfplay_eval_path)
 
     # start RL
-    reinforce = Reinforce(dialog, ctx_gen, corpus, sv_config, elder_model, baozi_model, rl_config, dialog_eval, ctx_gen_eval)
+    reinforce = Reinforce(dialog, ctx_gen, corpus, sv_config, sys_model, usr_model, rl_config, dialog_eval, ctx_gen_eval)
     reinforce.run()
 
-    # save elder model
-    th.save(elder_model.state_dict(), rl_config.rl_model_path)
+    # save sys model
+    th.save(sys_model.state_dict(), rl_config.rl_model_path)
 
     end_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
     print('[END]', end_time, '='*30)

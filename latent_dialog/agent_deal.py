@@ -2,11 +2,11 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.autograd import Variable
 import numpy as np
 from latent_dialog import domain
 from latent_dialog.utils import LONG, FLOAT
 from latent_dialog.corpora import USR, SYS, BOD, EOS, STOP_TOKENS, SEL
+
 
 class Agent(object):
     """Agent's interface.

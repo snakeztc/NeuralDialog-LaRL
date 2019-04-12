@@ -10,8 +10,6 @@ from latent_dialog.evaluators import BleuEvaluator
 from latent_dialog.models_deal import GaussHRED
 from latent_dialog.main import train, validate, generate
 import latent_dialog.domain as domain
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 stats_path = 'config_log_model'
 if not os.path.exists(stats_path):

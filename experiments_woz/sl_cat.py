@@ -8,10 +8,9 @@ import latent_dialog.corpora as corpora
 from latent_dialog.data_loaders import BeliefDbDataLoaders
 from latent_dialog.evaluators import MultiWozEvaluator
 from latent_dialog.models_task import SysPerfectBD2Cat
-from latent_dialog.main import train, validate, generate
+from latent_dialog.main import train, validate
 import latent_dialog.domain as domain
-from experiments_woz.dialog_utils import task_generate, dump_latent
-import pickle as pkl
+from experiments_woz.dialog_utils import task_generate
 
 
 domain_name = 'object_division'
@@ -126,14 +125,6 @@ model.load_state_dict(th.load(os.path.join(saved_path, '{}-model'.format(best_ep
 
 
 logger.info("Forward Only Evaluation")
-# run the model on the test dataset\
-latents = dump_latent(model, val_data, config)
-with open(os.path.join(saved_path, 'latent.p'), 'wb') as f:
-    pkl.dump(latents, f)
-
-#latents = dump_latent(model, train_data, config)
-#with open(os.path.join(saved_path, 'train_latent.p'), 'wb') as f:
-#    pkl.dump(latents, f)
 
 validate(model, val_data, config)
 validate(model, test_data, config)

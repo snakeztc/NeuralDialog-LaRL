@@ -1,11 +1,9 @@
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from torch.autograd import Variable
 from torch.nn.modules.loss import _Loss
 import numpy as np
-import latent_dialog.domain
+from latent_dialog import domain
 from latent_dialog.utils import LONG
 
 
