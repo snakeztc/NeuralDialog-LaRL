@@ -35,6 +35,12 @@ For both datasets, the scripts follow the same structure: (1) first using superv
 to create pre-train models. (2) use policy gradient reinforcement learning to fine tune the pretrain
 model via reinforcement learning.
 
+Besides that, the other folders contains:
+    
+    - FB: the original facebook implementation from Lewis et al 2017. We the pre-trained judge model 
+    to score our DealOrNoDeal conversations.
+    - latent_dialog: source code 
+
 ### Step 1: Supervised Learning
 
     - sl_word: train a standard encoder decoder model using supervised learning (SL)
