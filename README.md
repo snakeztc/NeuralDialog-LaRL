@@ -20,6 +20,11 @@ work, please cite the following paper. The bibtex are listed below:
     pytorch == 0.4.0
     numpy
             
+### Data
+The data are in folder data. For DealOrNoDeal dataset, the files are in data/negotiate. For MultiWoz dataset,
+the processed version is a zip file (norm-multi-woz.zip). Please unzip it before run any experiments for MultiWoz.
+
+            
 ### Over structure:
 The source code is under **latent_dialog**. The experiment script is under folders:
 

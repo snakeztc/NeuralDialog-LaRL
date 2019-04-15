@@ -70,7 +70,7 @@ config = Pack(
     k=domain_info.input_length(),
     init_range=0.1,
     pretrain_folder='2018-11-06-22-43-44-sys_sl_bdu2latent',
-    forward_only=True
+    forward_only=False
 )
 set_seed(config.seed)
 start_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))

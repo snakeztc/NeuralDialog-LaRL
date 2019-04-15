@@ -60,7 +60,7 @@ config = Pack(
     k=domain_info.input_length(),
     init_range=0.1,
     pretrain_folder='2018-11-13-21-27-21-sys_sl_bdu2resp',
-    forward_only=True
+    forward_only=False
 )
 
 th.manual_seed(1)

@@ -44,7 +44,6 @@ def main():
         record_freq = 200,
         sv_train_freq= 1000,  # TODO pay attention to main.py, cuz it is also controlled there
         use_gpu = env == 'gpu',
-        naive_baozi = True,
         nepoch = 10,
         nepisode = 0,
         max_words = 100,

@@ -132,8 +132,8 @@ class Dialog(object):
             print('='*50)
 
         stats = dict()
-        stats['elder_rew'] = self.metrics.metrics['elder_rew'].show()
-        stats['elder_unique'] = self.metrics.metrics['elder_unique'].show()
+        stats['system_rew'] = self.metrics.metrics['system_rew'].show()
+        stats['system_unique'] = self.metrics.metrics['system_unique'].show()
         stats['avg_agree'] = self.metrics.metrics['agree'].show()
 
         return conv, agree, rewards, stats
