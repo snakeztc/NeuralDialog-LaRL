@@ -154,8 +154,6 @@ class DialogEval(object):
         assert len(self.agents) == len(ctxs)
         # initialize agents by feeding in the context
         for agent, ctx in zip(self.agents, ctxs):
-            # if agent.name == 'Elder':
-            #     agent.model.eval()
             agent.feed_context(ctx)
 
         # choose who goes first by random
@@ -196,8 +194,7 @@ class DialogEval(object):
             agent.transform_dialogue_history()
             choice = self.judger.choose(agent.context, agent.dialogue_text)
             choices.append(choice)
-            # if agent.name == 'Elder':
-            #     agent.model.train()
+
 
         # print('ctxs = {}'.format(ctxs))
         # print('choices = {}'.format(choices))

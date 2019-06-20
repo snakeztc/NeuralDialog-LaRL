@@ -298,7 +298,7 @@ def validate_rl(dialog_eval, ctx_gen, num_episode=200):
         reward_list.append(true_reward)
         agree_list.append(float(agree if agree is not None else 0.0))
         for turn in conv:
-            if turn[0] == 'Elder':
+            if turn[0] == 'System':
                 sent_metric.record(turn[1])
                 word_metric.record(turn[1])
     results = {'sys_rew': np.average(reward_list),

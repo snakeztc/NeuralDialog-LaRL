@@ -127,7 +127,7 @@ def record_rl(n_epsd, dialog, ctx_gen, rl_f):
         conv_list.append(conv)
         agree_list.append(float(agree) if agree is not None else 0.0)
         for turn in conv:
-            if turn[0] == 'Elder':
+            if turn[0] == 'System':
                 sent_metric.record(turn[1])
                 word_metric.record(turn[1])
 
@@ -156,7 +156,7 @@ def record_rl_task(n_epsd, dialog, goal_gen, rl_f):
         reward_list.append(true_reward)
         conv_list.append(conv)
         for turn in conv:
-            if turn[0] == 'Elder':
+            if turn[0] == 'System':
                 sent_metric.record(turn[1])
                 word_metric.record(turn[1])
 

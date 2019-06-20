@@ -91,7 +91,7 @@ def main():
     sys_model.load_state_dict(th.load(rl_config.sv_model_path, map_location=lambda storage, location: storage))
     # we don't want to use Dropout during RL
     sys_model.eval()
-    sys = LatentRlAgent(sys_model, corpus, rl_config, name='Elder', use_latent_rl=rl_config.use_latent_rl)
+    sys = LatentRlAgent(sys_model, corpus, rl_config, name='System', use_latent_rl=rl_config.use_latent_rl)
 
     # SIMULATOR we keep usr frozen, i.e. we don't update its parameters
     usr_model = models_deal.HRED(corpus, sim_config)
@@ -100,7 +100,7 @@ def main():
     usr_model.load_state_dict(th.load(rl_config.sim_model_path, map_location=lambda storage, location: storage))
     usr_model.eval()
     usr_type = LstmAgent 
-    usr = usr_type(usr_model, corpus, rl_config, name='Baozi')
+    usr = usr_type(usr_model, corpus, rl_config, name='User')
 
     # load FB judger model
     # load FB judger model

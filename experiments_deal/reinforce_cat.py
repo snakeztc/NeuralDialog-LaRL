@@ -21,12 +21,12 @@ def main():
     print('[START]', start_time, '='*30)
 
     # RL configuration
-    folder = '2019-04-15-12-43-05-sl_cat'
-    epoch_id = '8'
+    folder = '2019-06-20-09-19-39-sl_word'
+    epoch_id = '23'
 
     env = 'gpu'
-    sim_epoch_id = '5'
-    simulator_folder = '2019-04-15-12-43-38-sl_word'  # set to the log folder of the user model
+    sim_epoch_id = '23'
+    simulator_folder = '2019-06-20-09-19-39-sl_word'  # set to the log folder of the user model
     exp_dir = os.path.join('config_log_model', folder, 'rl-' + start_time)
     if not os.path.exists(exp_dir):
         os.mkdir(exp_dir)

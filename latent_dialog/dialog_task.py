@@ -30,7 +30,7 @@ class Dialog(object):
         for t_id, (name, utt) in enumerate(conv):
             # assert utt[-1] == EOS, utt
             if t_id % 2 == 0:
-                assert name == 'Baozi'
+                assert name == 'User'
             utt = ' '.join(utt[:-1])
             if utt == EOD:
                 continue
