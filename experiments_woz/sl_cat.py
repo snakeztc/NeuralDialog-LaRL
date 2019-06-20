@@ -49,10 +49,10 @@ config = Pack(
     y_size=10,
     k_size=20,
     beta = 0.01,
-    simple_posterior=False,
-    contextual_posterior=True,
+    simple_posterior=True,
+    contextual_posterior=False,
     use_mi = False,
-    use_pr = False,
+    use_pr = True,
     use_diversity = False,
     #
     beam_size=20,

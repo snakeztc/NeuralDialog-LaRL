@@ -50,7 +50,6 @@ config = Pack(
     k_size = 20,
     beta = 0.01,
     simple_posterior=True,
-    use_bpr = False,
     use_pr = True,
     dec_use_attn = False,
     dec_rnn_cell = 'gru', # must be same as ctx_cell_size due to the passed initial state
