@@ -21,8 +21,8 @@ def main():
     print('[START]', start_time, '='*30)
 
     # RL configuration
-    folder = '2019-06-20-09-19-39-sl_word'
-    epoch_id = '23'
+    folder = '2019-06-20-09-43-39-sl_cat'
+    epoch_id = '83'
 
     env = 'gpu'
     sim_epoch_id = '23'

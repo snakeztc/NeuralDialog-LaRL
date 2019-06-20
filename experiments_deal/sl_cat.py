@@ -49,12 +49,12 @@ config = Pack(
     y_size = 10,
     k_size = 20,
     beta = 0.01,
-    simple_posterior=False,
+    simple_posterior=True,
     use_bpr = False,
     use_pr = True,
-    dec_use_attn = True,
+    dec_use_attn = False,
     dec_rnn_cell = 'gru', # must be same as ctx_cell_size due to the passed initial state
-    dec_cell_size = 256, # must be same as ctx_cell_size due to the passed initial state
+    dec_cell_size = 256,  # must be same as ctx_cell_size due to the passed initial state
     dec_attn_mode = 'cat', 
     #
     fix_train_batch=False,

@@ -419,9 +419,6 @@ class CatHRED(BaseModel):
         else:
             total_loss = loss.nll + loss.pi_kl
 
-        if self.config.use_bpr:
-            total_loss += (loss.b_pr * self.config.beta)
-
         return total_loss
 
     def z2dec(self, last_h, requires_grad):
@@ -515,19 +512,16 @@ class CatHRED(BaseModel):
                                                                goal_hid=goals_h)  # (batch_size, goal_nhid)
 
 
-
         if mode == GEN:
             return ret_dict, labels
         else:
             # regularization qy to be uniform
             avg_log_qy = th.exp(log_qy.view(-1, self.config.y_size, self.config.k_size))
             avg_log_qy = th.log(th.mean(avg_log_qy, dim=0) + 1e-15)
-            b_pr = self.cat_kl_loss(avg_log_qy, self.log_uniform_y, batch_size, unit_average=True)
             mi = self.entropy_loss(avg_log_qy, unit_average=True) - self.entropy_loss(log_qy, unit_average=True)
             pi_kl = self.cat_kl_loss(log_qy, log_py, batch_size, unit_average=True)
             pi_h = self.entropy_loss(log_qy, unit_average=True)
-
-            results = Pack(nll=self.nll(dec_outputs, labels), b_pr=b_pr, mi=mi, pi_kl=pi_kl, pi_h=pi_h)
+            results = Pack(nll=self.nll(dec_outputs, labels), mi=mi, pi_kl=pi_kl, pi_h=pi_h)
 
             if return_latent:
                 results['latent_action'] = dec_init_state
