@@ -75,7 +75,7 @@ def main():
         sys_model.cuda()
     sys_model.load_state_dict(th.load(rl_config.sv_model_path, map_location=lambda storage, location: storage))
     sys_model.eval()
-    sys = OfflineLatentRlAgent(sys_model, corpus, rl_config, name='Elder', tune_pi_only=rl_config.tune_pi_only)
+    sys = OfflineLatentRlAgent(sys_model, corpus, rl_config, name='System', tune_pi_only=rl_config.tune_pi_only)
 
     # start RL
     reinforce = OfflineTaskReinforce(sys, corpus, sv_config, sys_model, rl_config, task_generate)
