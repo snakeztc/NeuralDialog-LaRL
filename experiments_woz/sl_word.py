@@ -15,6 +15,7 @@ from dialog_utils import task_generate
 domain_name = 'object_division'
 domain_info = domain.get_domain(domain_name)
 config = Pack(
+    random_seed = 10,
     train_path='../data/norm-multi-woz/train_dials.json',
     valid_path='../data/norm-multi-woz/val_dials.json',
     test_path='../data/norm-multi-woz/test_dials.json',
@@ -63,7 +64,7 @@ config = Pack(
     forward_only=False
 )
 
-th.manual_seed(1)
+th.manual_seed(config.random_seed)
 start_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
 stats_path = 'sys_config_log_model'
 if config.forward_only:
@@ -111,7 +112,6 @@ if best_epoch is None:
 
 logger.info("$$$ Load {}-model".format(best_epoch))
 config.batch_size = 32
-best_epoch = 'rlsl100'
 model.load_state_dict(th.load(os.path.join(saved_path, '{}-model'.format(best_epoch))))
 
 logger.info("Forward Only Evaluation")

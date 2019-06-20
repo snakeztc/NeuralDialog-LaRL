@@ -120,7 +120,6 @@ if best_epoch is None:
 
 print("$$$ Load {}-model".format(best_epoch))
 config.batch_size = 32
-best_epoch = 'rl'
 model.load_state_dict(th.load(os.path.join(saved_path, '{}-model'.format(best_epoch))))
 
 
