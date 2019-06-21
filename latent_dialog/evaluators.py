@@ -737,7 +737,7 @@ class MultiWozEvaluator(BaseEvaluator):
         report += '{} Corpus Matches : {:2.2f}%'.format(mode, (matches / float(total) * 100)) + "\n"
         report += '{} Corpus Success : {:2.2f}%'.format(mode, (successes / float(total) * 100)) + "\n"
         report += 'Total number of dialogues: %s ' % total
-        self.logger.info(report)
+        # self.logger.info(report)
         return report, successes/float(total), matches/float(total)
 
     def get_report(self):

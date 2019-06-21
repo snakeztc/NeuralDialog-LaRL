@@ -58,7 +58,7 @@ def task_generate(model, data, config, evaluator, num_batch, dest_f=None, verbos
             generated_dialogs[keys[b_id]].append(pred_str)
             evaluator.add_example(true_str, pred_str)
 
-            if verbose and (num_batch is None or batch_cnt < 2):
+            if verbose and (dest_f is not None or batch_cnt < 2):
                 write('%s-prev_ctx = %s' % (keys[b_id], prev_ctx,))
                 write('True: {}'.format(true_str, ))
                 write('Pred: {}'.format(pred_str, ))

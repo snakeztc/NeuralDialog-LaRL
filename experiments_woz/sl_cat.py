@@ -42,15 +42,13 @@ config = Pack(
     enc_use_attn=True,
     dec_use_attn=True,
     dec_rnn_cell='lstm',
-    # must be same as ctx_cell_size due to the passed initial state
     dec_cell_size=300,
-    # must be same as ctx_cell_size due to the passed initial state
     dec_attn_mode='cat',
     y_size=10,
     k_size=20,
-    beta = 0.01,
+    beta = 0.001,
     simple_posterior=True,
-    contextual_posterior=False,
+    contextual_posterior=True,
     use_mi = False,
     use_pr = True,
     use_diversity = False,
@@ -66,10 +64,10 @@ config = Pack(
     save_model=True,
     early_stop=False,
     gen_type='greedy',
-    preview_batch_num=50,
+    preview_batch_num=None,
     k=domain_info.input_length(),
     init_range=0.1,
-    pretrain_folder='2018-11-06-22-43-44-sys_sl_bdu2latent',
+    pretrain_folder='2019-06-20-21-43-06-sl_cat',
     forward_only=False
 )
 set_seed(config.seed)
@@ -116,7 +114,7 @@ if not config.forward_only:
         print('Training stopped by keyboard.')
 if best_epoch is None:
     model_ids = sorted([int(p.replace('-model', '')) for p in os.listdir(saved_path) if 'model' in p and 'rl' not in p])
-    best_epoch = model_ids[-1]
+    best_epoch = model_ids[-3]
 
 print("$$$ Load {}-model".format(best_epoch))
 config.batch_size = 32
